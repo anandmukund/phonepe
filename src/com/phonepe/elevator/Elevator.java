@@ -69,7 +69,8 @@ public class Elevator implements Runnable{
     }
 
     public void move(){
-       
+           synchronized (this) {
+		
         	/*if(this.dooeOpen){
         		System.out.println("Elevator ID " + this.id + " | Current floor - " + getCurrentFloor() + "Door Closing");
             	this.dooeOpen = false;
@@ -121,7 +122,7 @@ public class Elevator implements Runnable{
                     }
                 }
             }
-        
+           }
 
     }
 

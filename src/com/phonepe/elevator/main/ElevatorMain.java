@@ -46,6 +46,10 @@ public class ElevatorMain {
 				} 
           
             String[] requests = requser.split(" ");
+            if(requests.length == 1 && requser.equalsIgnoreCase("0")){
+            	System.out.println("Elevator Switching Off");
+            	System.exit(0);
+            }
             int requestFloor = Integer.valueOf(requests[0]);
             int targetFloor = Integer.valueOf(requests[1]);
             if(requests.length != 2 || requestFloor < 0 || requestFloor > db.floor ||targetFloor < 0 || targetFloor > db.floor ){

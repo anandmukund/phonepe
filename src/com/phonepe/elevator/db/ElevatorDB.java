@@ -32,6 +32,11 @@ public enum ElevatorDB {
             elevatorList.add(elevator);
         }
     }
+
+    /**
+     * update the state of elevator as soon as it changes the direction
+     */
+   
     public void updateElevatorLists(Elevator elevator){
         if(elevator.getElevatorState().equals(ElevatorState.UP)){
             upMovingMap.put(elevator.getId(), elevator);
