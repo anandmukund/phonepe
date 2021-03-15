@@ -14,7 +14,7 @@ public class Elevator implements Runnable{
     private NavigableSet<Integer> floorStops;
     public Map<ElevatorState, NavigableSet<Integer>> floorStopsMap;
     public int time = 0;
-    private boolean dooeOpen;
+    private boolean doorOpen;
     
     public Elevator(int id){
         this.id = id;
@@ -68,7 +68,7 @@ public class Elevator implements Runnable{
         this.currentFloor = currentFloor;
     }
 
-    public synchronized void move(){
+    public void move(){
           
         	/*if(this.dooeOpen){
         		System.out.println("Elevator ID " + this.id + " | Current floor - " + getCurrentFloor() + "Door Closing");
@@ -156,10 +156,10 @@ public class Elevator implements Runnable{
 
     
     public void openDoor() {
-    	this.dooeOpen = true;
+    	this.doorOpen = true;
 	}
     public void closeDoor() {
-    	this.dooeOpen = false;
+    	this.doorOpen = false;
 	}
 
 	@Override
