@@ -13,7 +13,7 @@ public class Elevator implements Runnable{
     private int currentFloor;
     private NavigableSet<Integer> floorStops;
     public Map<ElevatorState, NavigableSet<Integer>> floorStopsMap;
-    public int time = 0;
+    private int time = 0;
     private boolean doorOpen;
     
     public Elevator(int id){
