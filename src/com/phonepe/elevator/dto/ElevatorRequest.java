@@ -21,6 +21,7 @@ public class ElevatorRequest {
     }
 
     public Elevator submitRequest(){
-        return ElevatorController.getInstance().selectElevator(this);
+    	ElevatorController cont = new ElevatorController();
+        return cont.selectElevator(this);
     }
 }

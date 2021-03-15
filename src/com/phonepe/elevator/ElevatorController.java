@@ -2,47 +2,13 @@ package com.phonepe.elevator;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import com.phonepe.elevator.db.ElevatorDB;
 import com.phonepe.elevator.dto.ElevatorRequest;
 import com.phonepe.elevator.enums.ElevatorState;
 
-public final class ElevatorController implements Runnable {
-
-    private boolean stopController;
-   
-    // All the UP moving elevators
-    private static Map<Integer, Elevator> upMovingMap = new HashMap<Integer, Elevator>();
-
-    // All the DOWN moving elevators
-    private static Map<Integer, Elevator> downMovingMap = new HashMap<Integer, Elevator>();
-    // STATIONARY elevators are part of UP and DOWN map both.
-
-    private static List<Elevator> elevatorList =null;
-       public void init(int floor,int elevator){
-    	   elevatorList = new ArrayList<Elevator>(elevator);
-    	    this.floor = floor;
-    	    initializeElevators(elevator);
-       }
-    private static final ElevatorController instance = new ElevatorController();
-    private ElevatorController(){
-        if(instance != null){
-            throw new IllegalStateException("Already instantiated");
-        }
-        setStopController(false);
-    }
-      private  int floor ;
-      
-    public int getFloor() {
-		return floor;
-	}
-
-	public void setFloor(int floor) {
-		this.floor = floor;
-	}
-
-	public static ElevatorController getInstance(){
-        return instance;
-    }
-
+public final class ElevatorController {
+	ElevatorDB db = ElevatorDB.INSTANCE;
+	
     /**
      * Select an elevator from the pool of operational elevators that can serve the
      * the request optimally
@@ -50,33 +16,19 @@ public final class ElevatorController implements Runnable {
      * @return Selected Elevator
      */
     public synchronized Elevator selectElevator(ElevatorRequest elevatorRequest) {
-
         Elevator elevator = null;
-
         ElevatorState elevatorState = getRequestedElevatorDirection(elevatorRequest);
         int requestedFloor = elevatorRequest.getRequestFloor();
         int targetFloor = elevatorRequest.getTargetFloor();
-
         elevator = findElevator(elevatorState, requestedFloor, targetFloor);
-
         // So that elevators can start moving again.
         notifyAll();
         return elevator;
 
 
-    }
+    }  
 
-    private static void initializeElevators(int elevators){
-        for(int i=0; i<elevators; i++){
-            Elevator elevator = new Elevator(i);
-            Thread t = new Thread(elevator);
-            t.start();
-
-            elevatorList.add(elevator);
-        }
-    }
-
-    private static ElevatorState getRequestedElevatorDirection(ElevatorRequest elevatorRequest){
+    private  ElevatorState getRequestedElevatorDirection(ElevatorRequest elevatorRequest){
         ElevatorState elevatorState = null;
         int requestedFloor = elevatorRequest.getRequestFloor();
         int targetFloor = elevatorRequest.getTargetFloor();
@@ -97,17 +49,16 @@ public final class ElevatorController implements Runnable {
      * @param targetFloor Floor number where user wants to go
      * @return selected elevator
      */
-    private static Elevator findElevator(ElevatorState elevatorState, int requestedFloor, int targetFloor) {
+    private  Elevator findElevator(ElevatorState elevatorState, int requestedFloor, int targetFloor) {
         Elevator elevator = null;
 
         // Data structure to hold distance of eligible elevators from the request floor
         // The keys represent the current distance of an elevator from request floor
         TreeMap<Integer, Integer> sortedKeyMap = new TreeMap<Integer, Integer>();
-
         if(elevatorState.equals(ElevatorState.UP)){
 
             // Let's go over all elevators that are either going UP or are STATIONARY
-            for(Map.Entry<Integer, Elevator> elvMap : upMovingMap.entrySet()){
+            for(Map.Entry<Integer, Elevator> elvMap : db.upMovingMap.entrySet()){
                 Elevator elv = elvMap.getValue();
                 Integer distance = requestedFloor - elv.getCurrentFloor();
                 if(distance < 0 && elv.getElevatorState().equals(ElevatorState.UP)){
@@ -120,13 +71,13 @@ public final class ElevatorController implements Runnable {
 
             if(!sortedKeyMap.isEmpty()){
             Integer selectedElevatorId = sortedKeyMap.firstEntry().getValue();
-            elevator = upMovingMap.get(selectedElevatorId);
+            elevator = db.upMovingMap.get(selectedElevatorId);
             }
 
 
         } else if(elevatorState.equals(ElevatorState.DOWN)){
             // Let's go over all elevators that are either going DOWN or are STATIONARY
-            for(Map.Entry<Integer, Elevator> elvMap : downMovingMap.entrySet()){
+            for(Map.Entry<Integer, Elevator> elvMap : db.downMovingMap.entrySet()){
                 Elevator elv = elvMap.getValue();
                 Integer distance = elv.getCurrentFloor() - requestedFloor;
                 if(distance < 0 && elv.getElevatorState().equals(ElevatorState.DOWN)){
@@ -138,7 +89,7 @@ public final class ElevatorController implements Runnable {
             }
             if(!sortedKeyMap.isEmpty()){
             Integer selectedElevatorId = sortedKeyMap.firstEntry().getValue();
-            elevator = downMovingMap.get(selectedElevatorId);
+            elevator = db.downMovingMap.get(selectedElevatorId);
             }
 
         }
@@ -164,7 +115,6 @@ public final class ElevatorController implements Runnable {
         if (floorSet2 == null) {
             floorSet2 = new ConcurrentSkipListSet<Integer>();
         }
-
         floorSet2.add(requestedFloor);
         floorSet2.add(targetFloor);
         elevator.floorStopsMap.put(elevatorDirection2, floorSet2);
@@ -176,47 +126,7 @@ public final class ElevatorController implements Runnable {
     /**
      * update the state of elevator as soon as it changes the direction
      */
-    public static synchronized void updateElevatorLists(Elevator elevator){
-        if(elevator.getElevatorState().equals(ElevatorState.UP)){
-            upMovingMap.put(elevator.getId(), elevator);
-            downMovingMap.remove(elevator.getId());
-        } else if(elevator.getElevatorState().equals(ElevatorState.DOWN)){
-            downMovingMap.put(elevator.getId(), elevator);
-            upMovingMap.remove(elevator.getId());
-        } else if (elevator.getElevatorState().equals(ElevatorState.STATIONARY)){
-            upMovingMap.put(elevator.getId(), elevator);
-            downMovingMap.put(elevator.getId(),elevator);
-        } else if (elevator.getElevatorState().equals(ElevatorState.MAINTAINANCE)){
-            upMovingMap.remove(elevator.getId());
-            downMovingMap.remove(elevator.getId());
-        }
-    }
+   
 
-    @Override
-    public void run() {
-        stopController =  false;
-        while(true){
-            try {
-                Thread.sleep(100);
-                if(stopController){
-                    break;
-                }
-            } catch (InterruptedException e){
-                System.out.println(e.getStackTrace());
-            }
-        }
-    }
-
-    public void setStopController(boolean stop){
-        this.stopController = stop;
-
-    }
-
-    public synchronized List<Elevator> getElevatorList() {
-        return elevatorList;
-    }
-
-    public boolean isStopController() {
-        return stopController;
-    }
+    
 }

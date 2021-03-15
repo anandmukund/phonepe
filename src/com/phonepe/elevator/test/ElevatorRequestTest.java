@@ -7,32 +7,28 @@ import org.junit.Test;
 
 import com.phonepe.elevator.Elevator;
 import com.phonepe.elevator.ElevatorController;
+import com.phonepe.elevator.db.ElevatorDB;
 import com.phonepe.elevator.dto.ElevatorRequest;
 
 import static org.junit.Assert.*;
 
 public class ElevatorRequestTest {
 
-    private ElevatorController elevatorController;
-    private Thread elevatorControllerThread;
-
-
-
+    private ElevatorDB elevatorController;
+  
     @Before
     public void setUp() throws Exception {
 
-        elevatorController = ElevatorController.getInstance();
-        elevatorControllerThread = new Thread(elevatorController);
+        elevatorController = ElevatorDB.INSTANCE;
         elevatorController.init(16,15);
-        elevatorControllerThread.start();
 
     }
 
     @After
     public void tearDown() throws Exception {
-        if(!elevatorController.isStopController()) {
+       /* if(!elevatorController.isStopController()) {
             elevatorController.setStopController(true);
-        }
+        }*/
 
     }
 

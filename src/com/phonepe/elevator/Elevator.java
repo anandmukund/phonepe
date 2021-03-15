@@ -2,6 +2,7 @@ package com.phonepe.elevator;
 
 import java.util.*;
 
+import com.phonepe.elevator.db.ElevatorDB;
 import com.phonepe.elevator.enums.ElevatorState;
 
 public class Elevator implements Runnable{
@@ -57,7 +58,7 @@ public class Elevator implements Runnable{
         } else {
             setElevatorState(ElevatorState.STATIONARY);
             this.floorStopsMap = new LinkedHashMap<ElevatorState, NavigableSet<Integer>>();
-            ElevatorController.updateElevatorLists(this);
+            ElevatorDB.INSTANCE.updateElevatorLists(this);
         }
 
         setCurrentFloor(0);
@@ -68,7 +69,7 @@ public class Elevator implements Runnable{
     }
 
     public void move(){
-        synchronized (ElevatorController.getInstance()){
+       
         	/*if(this.dooeOpen){
         		System.out.println("Elevator ID " + this.id + " | Current floor - " + getCurrentFloor() + "Door Closing");
             	this.dooeOpen = false;
@@ -102,12 +103,11 @@ public class Elevator implements Runnable{
                     setCurrentFloor(currFlr);
 
                     if (nextFlr != null) {
-                        // This helps us in picking up any request that might come
-                        // while we are on the way.
+                        // This helps us in picking up any request that might come while we are on the way.
                         generateIntermediateFloors(currFlr, nextFlr);
                     } else {
                         setElevatorState(ElevatorState.STATIONARY);
-                        ElevatorController.updateElevatorLists(this);
+                        ElevatorDB.INSTANCE.updateElevatorLists(this);
                     }
 
                     System.out.println("Elevator ID " + this.id + " | Current floor - " + getCurrentFloor() + " | next move - " + getElevatorState());
@@ -121,15 +121,7 @@ public class Elevator implements Runnable{
                     }
                 }
             }
-
-            try {
-               
-                //Elevator Status Check for serving intermideate request
-                ElevatorController.getInstance().wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        
 
     }
 
@@ -165,12 +157,11 @@ public class Elevator implements Runnable{
     }
 
     
-    public boolean isDooeOpen() {
-		return dooeOpen;
+    public void openDoor() {
+    	this.dooeOpen = true;
 	}
-
-	public void setDooeOpen(boolean dooeOpen) {
-		this.dooeOpen = dooeOpen;
+    public void closeDoor() {
+    	this.dooeOpen = false;
 	}
 
 	@Override
